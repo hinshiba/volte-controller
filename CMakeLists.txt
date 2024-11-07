@@ -13,7 +13,7 @@ pico_sdk_init()
 
 add_executable(main
     main.c
-#     usb_descriptors.c
+    usb_descriptors.c
 )
 
 # Make sure TinyUSB can find tusb_config.h
