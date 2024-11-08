@@ -28,9 +28,10 @@
 #include <string.h>
 
 #include "bsp/board.h"
+#include "hardware/gpio.h"
+#include "pico/stdio.h"
 #include "tusb.h"
 #include "usb_descriptors.h"
-
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
 //--------------------------------------------------------------------+
@@ -55,6 +56,14 @@ void hid_task(void);
 int main(void) {
     board_init();
     tusb_init();
+    gpio_set_dir(5, false);
+    gpio_pull_up(5);
+    gpio_set_dir(6, false);
+    gpio_pull_up(6);
+    gpio_set_dir(7, false);
+    gpio_pull_up(7);
+    gpio_set_dir(8, false);
+    gpio_pull_up(8);
 
     while (1) {
         tud_task();  // tinyusb device task
@@ -99,8 +108,11 @@ static void send_hid_report(uint8_t report_id, uint32_t btn) {
             static bool has_keyboard_key = false;
 
             if (btn) {
-                uint8_t keycode[6] = {0};
-                keycode[0] = HID_KEY_A;
+                uint8_t keycode[6] = {0, 0, 0, 0};
+                if (btn & (1 << 0)) keycode[0] = HID_KEY_S;
+                if (btn & (1 << 1)) keycode[1] = HID_KEY_D;
+                if (btn & (1 << 2)) keycode[2] = HID_KEY_K;
+                if (btn & (1 << 3)) keycode[3] = HID_KEY_L;
 
                 tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, keycode);
                 has_keyboard_key = true;
@@ -182,7 +194,12 @@ void hid_task(void) {
     if (board_millis() - start_ms < interval_ms) return;  // not enough time
     start_ms += interval_ms;
 
-    uint32_t const btn = board_button_read();
+    // uint32_t const btn = board_button_read();
+    bool btn_s = !(gpio_get(5));
+    bool btn_d = !(gpio_get(6));
+    bool btn_k = !(gpio_get(7));
+    bool btn_l = !(gpio_get(8));
+    uint32_t const btn = (btn_s | btn_d << 1 | btn_k << 2 | btn_l << 3);
 
     // Remote wakeup
     if (tud_suspended() && btn) {
